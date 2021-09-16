@@ -1,24 +1,28 @@
 package com.example.myapplication;
 
-import androidx.annotation.RequiresApi;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.ScaleGestureDetector;
+import android.view.View;
+import android.widget.EditText;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.view.View;
-import android.widget.TextClock;
-import android.widget.TextView;
-
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity
 {
-    private TextView absoluteTextView;
-    private TextView nameTextView;
-    private TextView pathTextView;
-    private TextView readWriteTextView;
-    private TextView externalTextView;
+    private EditText _lastNameEditText;
+    private EditText _surNameEditText;
+
+    private final String FILE_NAME = "Base_Lab.txt";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -26,40 +30,92 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FindView();
+        Log.d("Lab_04: ", String.valueOf(super.getFilesDir()));
+
+        findView();
+        startApp();
     }
 
-    public void OnGetFilesDirButtonClick(View button) { DisplayInfo(super.getFilesDir()); }
-
-    public void OnGetCacheDirButtonClick(View button) { DisplayInfo(super.getCacheDir()); }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void OnGetExternalFilesDirClick(View button) {
-        DisplayInfo(super.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)); };
-
-    public void OnGetExternalCacheDirClick(View button) { DisplayInfo(super.getExternalCacheDir()); };
-
-    public void OnGetExternalStorageDirectoryClick(View button) {
-        DisplayInfo(Environment.getExternalStorageDirectory()); };
-
-    public void OnGetExternalStoragePublicDirectoryClick(View button) {
-        DisplayInfo(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)); };
-
-    private void FindView()
-    {
-        absoluteTextView = findViewById(R.id.textViewAbsolute);
-        nameTextView = findViewById(R.id.textViewName);
-        pathTextView = findViewById(R.id.textViewPath);
-        readWriteTextView = findViewById(R.id.textViewReadWrite);
-        externalTextView = findViewById(R.id.textViewExternal);
+    private void findView() {
+        _lastNameEditText = findViewById(R.id.editTextLastname);
+        _surNameEditText = findViewById(R.id.editTextSurname);
     }
 
-    private void DisplayInfo(File file)
-    {
-        absoluteTextView.setText("Absolute:" + file.getAbsolutePath());
-        nameTextView.setText("Name: " + file.getName());
-        pathTextView.setText("Path: " + file.getPath());
-        readWriteTextView.setText("Read/Write: " + file.canRead() + "/" + file.canWrite());
-        externalTextView.setText("External: " + Environment.getExternalStorageState());
+    public void onInputButtonClick(View button){
+        String surName = String.valueOf(_surNameEditText.getText());
+        String lastName = String.valueOf(_lastNameEditText.getText());
+
+        writeFile(surName + "; " + lastName + ";\r\n");
+    }
+
+    public void onShowFileInfoButtonClick(View button){
+        String readeInfo = readFile();
+        showDialogWindow("Содержимое файла", readeInfo);
+    }
+
+    private void startApp(){
+        File file = new File(super.getFilesDir(), FILE_NAME);
+
+        if(!file.exists()){
+            createFile(file);
+            showDialogWindow("Создание файла", "Файл " + FILE_NAME + " создан.");
+        }
+    }
+
+    private void createFile(File file){
+        try{
+            file.createNewFile();
+            Log.d("Lab_04: ", "Файл " + FILE_NAME + " создан.");
+        }
+        catch(IOException e){
+            Log.d("Lab_04: ", "Файл " + FILE_NAME + " не создан.");
+        }
+    }
+
+    private void writeFile(String message) {
+        try{
+            File file = new File(super.getFilesDir(), FILE_NAME);
+            FileWriter writer = new FileWriter(file, true);
+            BufferedWriter bufferedWriter = new BufferedWriter(writer);
+            bufferedWriter.write(message);
+            bufferedWriter.close();
+            Log.d("Lab_04: ", "Инфа записана в файл.");
+        }
+        catch (IOException e){
+            Log.d("Lab_04: ", "Ошибка записи в файл.");
+        }
+    }
+
+    private String readFile() {
+        try{
+            String message = "";
+            File file = new File(super.getFilesDir(), FILE_NAME);
+            FileReader reader = new FileReader(file);
+            Scanner scanner = new Scanner(reader);
+
+            while(scanner.hasNext()){
+                message += scanner.nextLine() + "\n";
+            }
+            reader.close();
+            Log.d("Lab_04: ", "Инфа записана в файл.");
+            return message;
+        }
+        catch (IOException e){
+            Log.d("Lab_04: ", "Ошибка записи в файл.");
+            return null;
+        }
+    }
+
+    private void showDialogWindow(String title, String message){
+        AlertDialog.Builder windowBuilder = new AlertDialog.Builder(this);
+        windowBuilder
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("ОК", (dialog, which) ->
+                {
+                    Log.d("Lab_04: ", "Закрытие диалогового окна");
+                });
+        AlertDialog window = windowBuilder.create();
+        window.show();
     }
 }
